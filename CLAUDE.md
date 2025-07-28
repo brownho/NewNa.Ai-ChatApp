@@ -216,3 +216,94 @@ The project includes several deployment configurations:
 8. **Deployment Scripts**: Multiple deployment scripts for different environments (VPS, GoDaddy, Cloudflare)
 9. **Global Variables**: Model selection exposed as `window.selectedModel` for cross-component access
 10. **Credentials**: All fetch requests requiring auth must include `credentials: 'include'`
+
+## Version Control & Git Workflow
+
+### Repository Information
+- **GitHub Repository**: https://github.com/brownho/NewNa.Ai-ChatApp
+- **Main Branch**: `main`
+- **Git User**: brownho (stephen@newna.ai)
+
+### Git Best Practices for This Project
+
+1. **Before Making Changes**:
+   ```bash
+   git pull origin main        # Always sync with remote first
+   git status                  # Check current state
+   ```
+
+2. **Committing Changes**:
+   ```bash
+   git add .                   # Stage all changes (respects .gitignore)
+   git diff --staged          # Review what will be committed
+   git commit -m "Clear, descriptive message"
+   git push origin main       # Push to remote
+   ```
+
+3. **Commit Message Guidelines**:
+   - Use present tense ("Add feature" not "Added feature")
+   - Keep first line under 50 characters
+   - Reference issue numbers when applicable
+   - Examples:
+     - "Add meeting mentor full-screen mode"
+     - "Fix authentication session timeout"
+     - "Update Ollama API endpoint configuration"
+
+4. **What NOT to Commit**:
+   - Database files (chat.db, *.sqlite)
+   - SSL certificates (certs/, *.pem, *.key)
+   - Environment files (.env, .env.local)
+   - Log files (*.log, logs/)
+   - Upload directory contents (uploads/*)
+   - Node modules (node_modules/)
+
+5. **Feature Development**:
+   ```bash
+   git checkout -b feature/your-feature-name
+   # Make changes
+   git add .
+   git commit -m "Add your feature"
+   git push origin feature/your-feature-name
+   # Create pull request on GitHub
+   ```
+
+6. **Handling Merge Conflicts**:
+   ```bash
+   git pull origin main       # Get latest changes
+   # Resolve conflicts in files
+   git add .
+   git commit -m "Resolve merge conflicts"
+   git push
+   ```
+
+7. **Tagging Releases**:
+   ```bash
+   git tag -a v1.0.0 -m "Release version 1.0.0"
+   git push origin v1.0.0
+   ```
+
+### Quick Git Commands Reference
+```bash
+# Status and logs
+git status                    # Current state
+git log --oneline -10        # Recent commits
+git diff                     # Unstaged changes
+git diff --staged           # Staged changes
+
+# Branches
+git branch                   # List branches
+git checkout -b feature-x    # Create & switch branch
+git checkout main           # Switch to main
+git merge feature-x         # Merge branch
+
+# Undoing changes
+git checkout -- file.js     # Discard local changes
+git reset HEAD file.js      # Unstage file
+git reset --hard HEAD~1     # Undo last commit (CAREFUL!)
+
+# Remote operations
+git remote -v               # Show remotes
+git fetch origin           # Fetch remote changes
+git pull origin main       # Pull and merge
+git push origin main       # Push to remote
+```
