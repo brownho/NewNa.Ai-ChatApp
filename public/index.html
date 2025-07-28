@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>NewNa.AI Local LLMs</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown-dark.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <img src="logo.png" alt="NewNa.AI Logo" class="logo">
+                <h1>NewNa.AI Local LLMs</h1>
+            </div>
+            <div class="model-info">
+                <label for="modelSelect">Model:</label>
+                <select id="modelSelect" class="model-select">
+                    <option value="">Loading models...</option>
+                </select>
+                <button id="setDefaultButton" class="set-default-button" title="Set current model as default">Set Default</button>
+                <div class="header-buttons">
+                    <button id="showMeetingAssistantHeader" class="header-button" title="Meeting Assistant">
+                        🎤
+                    </button>
+                    <a href="/dashboard.html" id="dashboardLink" class="header-button" title="Admin Dashboard" style="text-decoration: none; display: none;">
+                        📊
+                    </a>
+                </div>
+                <span id="gpu-temp" class="gpu-stat" title="GPU Temperature">--°C</span>
+                <span id="gpu-memory" class="gpu-stat" title="GPU Memory">--GB</span>
+                <span id="status" class="status">Ready</span>
+            </div>
+        </header>
+        
+        <div class="chat-container">
+            <div id="messages" class="messages markdown-body"></div>
+            
+            <button id="scrollToTop" class="scroll-to-top" aria-label="Scroll to top">
+                ↑
+            </button>
+            
+            <div class="input-container">
+                <textarea 
+                    id="messageInput" 
+                    class="message-input" 
+                    placeholder="Type your message here... (Shift+Enter for new line)"
+                    rows="3"
+                ></textarea>
+                <button id="sendButton" class="send-button">Send</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.0/marked.min.js"></script>
+    <script src="script.js"></script>
+    <script src="features.js"></script>
+    <script src="chat-history-sidebar.js"></script>
+    <script src="file-upload.js"></script>
+    <script src="performance-metrics.js"></script>
+    <script src="code-execution.js"></script>
+    <script src="model-parameters.js"></script>
+    <script src="meeting-assistant.js"></script>
+    <script src="meeting-mentor.js"></script>
+    <script src="meeting-mentor-fullscreen.js"></script>
+    <script src="meeting-ui-controller.js"></script>
+</body>
+</html>

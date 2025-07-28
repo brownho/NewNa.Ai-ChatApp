@@ -1,0 +1,60 @@
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.production.local
+
+# Database
+chat.db
+production.db
+*.db
+*.sqlite
+
+# Logs
+logs/
+*.log
+server.log
+tunnel.log
+traffic-monitor/logs/
+traffic-logs/
+
+# SSL Certificates
+certs/
+*.pem
+*.key
+*.crt
+
+# Uploads directory
+uploads/*
+!uploads/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backup files
+*.backup
+*~
+
+# Deployment artifacts
+*.deb
+cloudflared.deb
+
+# Temporary files
+tmp/
+temp/
+
+# Vercel
+.vercel

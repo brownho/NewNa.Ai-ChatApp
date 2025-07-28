@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm start)",
+      "Bash(npm install:*)",
+      "Bash(rm:*)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(npm run start:*)",
+      "Bash(chmod:*)",
+      "Bash(ping:*)",
+      "Bash(kill:*)",
+      "Bash(node:*)"
+    ],
+    "deny": []
+  }
+}

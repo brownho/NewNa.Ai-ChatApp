@@ -1,0 +1,18 @@
+[Unit]
+Description=BrownFi Local LLMs Web Interface
+After=network.target
+
+[Service]
+Type=simple
+User=sabro
+WorkingDirectory=/home/sabro/ollama-chat-app
+ExecStart=/usr/bin/node /home/sabro/ollama-chat-app/server.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=brownfi-llm
+Environment="NODE_ENV=production"
+
+[Install]
+WantedBy=multi-user.target
