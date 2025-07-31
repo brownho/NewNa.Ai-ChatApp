@@ -4,306 +4,106 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a full-stack web application that provides a ChatGPT-like interface for local Ollama models. The app features user authentication, guest access, chat sessions, file uploads, meeting assistance with AI coaching, comprehensive traffic monitoring, and an admin dashboard.
+A full-stack web application providing a ChatGPT-like interface for local Ollama models with user authentication, guest access, chat sessions, file uploads, meeting assistance, traffic monitoring, and admin dashboard.
 
 ## Development Commands
 
-### Running the Application
 ```bash
 # Install dependencies
 npm install
 
-# Start the server (production)
-npm start
+# Run the application
+npm start                  # HTTP mode (default port 3000)
+npm run start:https        # HTTPS mode (requires certs setup)
 
-# Start the server (development mode with nodemon)
-npm dev
-
-# The server runs on port 3000 by default (HTTP) or port 3000 (HTTPS)
-
-# HTTPS Configuration
-# 1. Generate self-signed certificates:
-mkdir -p certs
-openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
-
-# 2. Enable HTTPS in .env:
-# USE_HTTPS=true
-
-# 3. Access via https://localhost:3000
-```
-
-### Database Management
-```bash
-# The SQLite database is automatically created on first run
-# Database file: chat.db
-
-# To reset the database, delete chat.db and restart the server
-rm chat.db
-npm start
-```
-
-### Testing Traffic Monitoring
-```bash
+# Test traffic monitoring
 node test-traffic.js
+
+# Database operations
+rm chat.db && npm start    # Reset database completely
+
+# Ollama prerequisites
+ollama pull mixtral        # Default model
+ollama list               # Verify models installed
 ```
 
-### Ollama Prerequisites
-```bash
-# Ensure Ollama is installed and running
-# Pull at least one model before starting
-ollama pull mixtral  # or another model
-ollama list  # Verify models are installed
-```
+## Architecture & Critical Patterns
 
-## Architecture & Code Structure
-
-### Backend Architecture
-
-The backend is a monolithic Express.js application (`server.js`) with the following key components:
-
-1. **Authentication System**: JWT-based auth with session management, stored in SQLite
-2. **Database Layer**: SQLite3 with comprehensive schema for users, chats, meetings, and analytics
-3. **WebSocket Support**: Real-time features for traffic monitoring and chat updates
-4. **File Handling**: Multer-based file uploads with restrictions
-5. **Traffic Monitoring**: Custom middleware tracking all requests, with daily log rotation
-
-Key middleware and route organization:
-- Authentication middleware checks session validity
-- Traffic monitoring middleware logs all requests
-- Routes are defined inline in server.js (not modularized)
+### Backend Structure
+The backend is intentionally monolithic with these key files:
+- `server.js` - Main Express server with all routes defined inline (no route modules)
+- `auth.js` - JWT-based authentication with session management
+- `database.js` - Raw SQLite3 queries (no ORM)
+- `config/constants.js` - Centralized configuration
+- `middleware/rateLimiting.js` - Usage limits and rate limiting
+- `traffic-monitor/trafficLogger.js` - Request logging with daily rotation
 
 ### Frontend Architecture
+Vanilla JavaScript with modular approach:
+- Entry points: `public/index.html` (chat), `public/login.html` (auth), `public/dashboard.html` (admin)
+- All JS modules in `public/` use global variables for cross-component communication
+- `window.selectedModel` - Global model selection
+- No build process - direct script imports in HTML
 
-The frontend uses vanilla JavaScript with a modular approach:
+### Critical Implementation Patterns
 
-1. **Main Entry**: `public/index.html` - Chat interface
-2. **Authentication**: `public/login.html` - User registration/login
-3. **JavaScript Modules**: Located in `public/`:
-   - `script.js` - Main chat interface logic
-   - `chat-history-sidebar.js` - Collapsible sidebar for chat sessions
-   - `code-execution.js` - Sandboxed code execution interface
-   - `file-upload.js` - File upload handling
-   - `meeting-assistant.js` - Basic meeting features
-   - `meeting-mentor.js` - AI-powered meeting coaching (popup version)
-   - `meeting-mentor-fullscreen.js` - Full-screen meeting assistant with AI coaching
-   - `meeting-ui-controller.js` - Unified meeting UI controller
-   - `performance-metrics.js` - Response time tracking
-   - `model-parameters.js` - Model parameter controls
-   - `sharing.js` - Chat sharing functionality
-   - `auth.js` - Client-side authentication logic
-   - `dashboard.js` - Admin dashboard functionality
-
-The frontend communicates with the backend via REST APIs and WebSocket for real-time features.
-
-### Database Schema
-
-Key tables and their relationships:
-- `users` - User accounts with auth tokens
-- `chat_sessions` - Chat conversations linked to users
-- `chat_messages` - Individual messages in sessions
-- `meetings` - Meeting records with participants and transcripts
-- `user_profiles` - Extended user information
-
-## Critical Implementation Details
-
-### Authentication Flow
-1. User registers/logs in via `/api/auth/register` or `/api/auth/login` endpoints
-2. Server creates session and returns auth token
-3. Frontend stores user data in localStorage
-4. All authenticated requests include `credentials: 'include'` for session cookies
-5. Guest users can access limited features without authentication
-
-### Chat Message Flow
-1. User sends message via POST to `/api/chat` (authenticated) or `/api/guest/chat` (guests)
-2. Server validates session and user limits
-3. Message is saved to database (authenticated users only)
-4. Server forwards to Ollama API at `http://localhost:11434/api/chat`
-5. Response is returned to client and saved (authenticated users only)
-
-### Traffic Monitoring
-- All requests are logged with detailed metrics
-- Logs rotate daily at midnight
-- Real-time dashboard available at `/traffic`
-- WebSocket connection for live updates
-
-### File Upload Constraints
-- Max file size: 10MB
-- Allowed types: Images, documents, code files
-- Files stored in `uploads/` directory
-- Linked to chat messages in database
-
-## Common Development Tasks
-
-### Adding New API Endpoints
-Add routes directly in `server.js` following the existing pattern:
-```javascript
-app.post('/your-endpoint', authenticateToken, async (req, res) => {
-  // Implementation
-});
-```
-
-### Modifying Frontend Features
-1. Edit relevant JavaScript files in `public/js/`
-2. No build step required - changes are immediate
-3. Clear browser cache if changes don't appear
-
-### Database Schema Changes
-1. Modify the table creation in `server.js`
-2. Delete `chat.db` to recreate with new schema
-3. Consider data migration for production
-
-### Debugging
-- Server logs to console and journal (if using systemd)
-- Check browser console for frontend errors
-- SQLite database can be inspected with any SQLite client
-
-## Deployment Notes
-
-The project includes several deployment configurations:
-- Systemd service file for auto-start
-- Support for ngrok, Cloudflare tunnels, etc.
-- See SETUP.md for detailed deployment instructions
-
-## New Features Added
-
-### Meeting Mentor Full-Screen
-- Full-screen meeting assistant with real-time transcription
-- AI-powered coaching suggestions based on meeting context
-- Automatic action item detection
-- Meeting summary generation
-- User profile customization for personalized suggestions
-- Meeting description field for better AI context
-- Guest user support
-- Mobile-responsive design with proper scrolling
-- Export meeting notes functionality
-
-### Chat History Sidebar
-- Collapsible sidebar replacing dropdown menu
-- Search functionality for sessions
-- Session management (create, rename, delete)
-- Visual indicators for active sessions
-- Smooth animations and transitions
-
-### Guest Access
-- Users can access chat without authentication
-- Limited to basic features
-- No data persistence
-- Meetings work for guests with local storage
-
-### Admin Dashboard
-- Located at `/dashboard.html`
-- Real-time traffic analytics
-- User statistics and activity monitoring
-- System status monitoring
-- Database metrics
-- Only accessible to authenticated users
-
-### HTTPS Support
-- Built-in HTTPS configuration
-- Self-signed certificate generation
-- Configurable via .env file
-- Required for microphone access on remote devices
-
-## Important Conventions
-
-1. **No Build Process**: This is a vanilla JS project - no bundling or transpilation
-2. **Direct Database Access**: No ORM layer - raw SQL queries throughout
-3. **Inline Styles**: CSS is mostly in HTML files, not separate stylesheets
-4. **Session Storage**: Uses Express sessions with cookies for authentication
-5. **Error Handling**: Try-catch blocks around all async operations
-6. **Module Structure**: Server code is in monolithic `server.js`, authentication in `auth.js`, database in `database.js`
-7. **No Testing Framework**: No automated tests configured - manual testing only
-8. **Deployment Scripts**: Multiple deployment scripts for different environments (VPS, GoDaddy, Cloudflare)
-9. **Global Variables**: Model selection exposed as `window.selectedModel` for cross-component access
-10. **Credentials**: All fetch requests requiring auth must include `credentials: 'include'`
-
-## Version Control & Git Workflow
-
-### Repository Information
-- **GitHub Repository**: https://github.com/brownho/NewNa.Ai-ChatApp
-- **Main Branch**: `main`
-- **Git User**: brownho (stephen@newna.ai)
-
-### Git Best Practices for This Project
-
-1. **Before Making Changes**:
-   ```bash
-   git pull origin main        # Always sync with remote first
-   git status                  # Check current state
+1. **Authentication**: All authenticated requests MUST include `credentials: 'include'`
+   ```javascript
+   fetch('/api/endpoint', {
+     credentials: 'include',  // Required for session cookies
+     // ...
+   })
    ```
 
-2. **Committing Changes**:
-   ```bash
-   git add .                   # Stage all changes (respects .gitignore)
-   git diff --staged          # Review what will be committed
-   git commit -m "Clear, descriptive message"
-   git push origin main       # Push to remote
+2. **Database Access**: Direct SQL queries without ORM
+   ```javascript
+   db.get('SELECT * FROM users WHERE id = ?', [userId], callback)
+   db.run('INSERT INTO chat_messages...', params, callback)
    ```
 
-3. **Commit Message Guidelines**:
-   - Use present tense ("Add feature" not "Added feature")
-   - Keep first line under 50 characters
-   - Reference issue numbers when applicable
-   - Examples:
-     - "Add meeting mentor full-screen mode"
-     - "Fix authentication session timeout"
-     - "Update Ollama API endpoint configuration"
+3. **Chat Flow**: Messages go through validation → database → Ollama → response
+   - Authenticated: `/api/chat` (saves to DB)
+   - Guest: `/api/guest/chat` (no persistence)
 
-4. **What NOT to Commit**:
-   - Database files (chat.db, *.sqlite)
-   - SSL certificates (certs/, *.pem, *.key)
-   - Environment files (.env, .env.local)
-   - Log files (*.log, logs/)
-   - Upload directory contents (uploads/*)
-   - Node modules (node_modules/)
+4. **WebSocket**: Used for real-time traffic monitoring at `/traffic`
 
-5. **Feature Development**:
-   ```bash
-   git checkout -b feature/your-feature-name
-   # Make changes
-   git add .
-   git commit -m "Add your feature"
-   git push origin feature/your-feature-name
-   # Create pull request on GitHub
-   ```
+5. **File Uploads**: Multer middleware, 10MB limit, stored in `uploads/`
 
-6. **Handling Merge Conflicts**:
-   ```bash
-   git pull origin main       # Get latest changes
-   # Resolve conflicts in files
-   git add .
-   git commit -m "Resolve merge conflicts"
-   git push
-   ```
+## Environment Configuration
 
-7. **Tagging Releases**:
-   ```bash
-   git tag -a v1.0.0 -m "Release version 1.0.0"
-   git push origin v1.0.0
-   ```
-
-### Quick Git Commands Reference
 ```bash
-# Status and logs
-git status                    # Current state
-git log --oneline -10        # Recent commits
-git diff                     # Unstaged changes
-git diff --staged           # Staged changes
-
-# Branches
-git branch                   # List branches
-git checkout -b feature-x    # Create & switch branch
-git checkout main           # Switch to main
-git merge feature-x         # Merge branch
-
-# Undoing changes
-git checkout -- file.js     # Discard local changes
-git reset HEAD file.js      # Unstage file
-git reset --hard HEAD~1     # Undo last commit (CAREFUL!)
-
-# Remote operations
-git remote -v               # Show remotes
-git fetch origin           # Fetch remote changes
-git pull origin main       # Pull and merge
-git push origin main       # Push to remote
+# .env file (create if missing)
+USE_HTTPS=true              # Enable HTTPS
+OLLAMA_API_URL=http://localhost:11434/api/chat
+DAILY_MESSAGE_LIMIT=50
+GUEST_MESSAGE_LIMIT=10
+JWT_SECRET=your-secret-key
+SESSION_SECRET=your-session-secret
 ```
+
+## Common Tasks
+
+### Adding New Features
+1. Add routes directly in `server.js` (no separate route files)
+2. Add frontend logic in `public/` with direct script imports
+3. Use existing patterns for consistency
+
+### Debugging Issues
+- Check browser console for frontend errors
+- Server logs to console (use `npm start` to see logs)
+- SQLite DB viewable with any SQLite client
+- Traffic logs in `traffic-monitor/logs/`
+
+### Testing
+No automated testing framework - use manual testing:
+- `node test-traffic.js` - Test traffic monitoring
+- Browser testing for UI features
+- Postman/curl for API endpoints
+
+## Important Constraints
+
+1. **No Build Process** - Vanilla JS only, no webpack/babel
+2. **Monolithic Server** - All routes in `server.js`, avoid modularization
+3. **Global State** - Frontend uses global variables, not module exports
+4. **Raw SQL** - No ORM, direct SQLite3 queries
+5. **Session-Based Auth** - Express sessions with cookies, not stateless JWT

@@ -59,6 +59,16 @@ const checkUsageLimits = (req, res, next) => {
     );
   }
   
+  // Check if user has unlimited messages
+  const unlimitedUsers = ['mike1014brown', 'sabrown0812'];
+  console.log('Checking user:', user.username, 'Message count:', user.daily_message_count);
+  
+  if (unlimitedUsers.includes(user.username)) {
+    console.log('User has unlimited messages:', user.username);
+    // Skip limit check for unlimited users
+    return next();
+  }
+  
   // Check if user has exceeded daily limit (50 for free users)
   const dailyLimit = 50; // You can make this dynamic based on user type
   if (user.daily_message_count >= dailyLimit) {
@@ -155,6 +165,11 @@ const login = (req, res) => {
           { expiresIn: '7d' }
         );
         
+        // Check admin status
+        const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'sabrown0812';
+        const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'sabrown0812@gmail.com';
+        const isAdmin = user.username === ADMIN_USERNAME && user.email === ADMIN_EMAIL;
+        
         res.json({
           message: 'Login successful',
           user: {
@@ -162,7 +177,8 @@ const login = (req, res) => {
             username: user.username,
             email: user.email,
             dailyMessageCount: user.daily_message_count,
-            totalMessages: user.total_messages
+            totalMessages: user.total_messages,
+            isAdmin: isAdmin
           },
           token
         });
@@ -197,6 +213,13 @@ const getUserInfo = (req, res) => {
       if (err) {
         return res.status(500).json({ error: 'Error fetching user info' });
       }
+      
+      // Add admin flag based on configuration
+      const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'sabrown0812';
+      const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'sabrown0812@gmail.com';
+      
+      user.isAdmin = user.username === ADMIN_USERNAME && user.email === ADMIN_EMAIL;
+      
       res.json(user);
     }
   );

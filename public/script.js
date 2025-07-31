@@ -9,6 +9,37 @@ let guestMessageCount = 0;
 
 // Check authentication on load
 window.addEventListener('load', async () => {
+    // Detect if running as installed PWA
+    if (window.matchMedia('(display-mode: standalone)').matches || 
+        window.navigator.standalone === true) {
+        document.body.classList.add('ios-standalone');
+        console.log('Running as installed PWA');
+    }
+    
+    // Register service worker for PWA functionality
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            console.log('Service Worker registered:', registration);
+            
+            // Check for updates
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // New service worker available
+                        if (confirm('New version available! Reload to update?')) {
+                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                            window.location.reload();
+                        }
+                    }
+                });
+            });
+        } catch (error) {
+            console.error('Service Worker registration failed:', error);
+        }
+    }
+    
     // Check if user is logged in
     const userStr = localStorage.getItem('user');
     const guestMode = localStorage.getItem('isGuest');
@@ -48,8 +79,8 @@ window.addEventListener('load', async () => {
             const userData = await response.json();
             currentUser = userData;
             
-            // Show dashboard link only for admin user
-            if (userData.username === 'sabrown0812' && userData.email === 'sabrown0812@gmail.com') {
+            // Show dashboard link based on server-side admin flag
+            if (userData.isAdmin) {
                 document.getElementById('dashboardLink').style.display = 'inline-block';
             }
         } catch (error) {

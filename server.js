@@ -352,9 +352,36 @@ app.get('/api/gpu-stats', async (req, res) => {
   }
 });
 
+// Speech Recognition Relay endpoint
+// This endpoint helps diagnose speech recognition issues
+app.post('/api/speech-recognition/test', async (req, res) => {
+  try {
+    // This endpoint can be used to test if the server can relay speech recognition
+    // In the future, this could be expanded to use actual speech-to-text services
+    
+    res.json({ 
+      status: 'ok',
+      message: 'Speech recognition relay endpoint is active',
+      alternatives: [
+        'Use Ollama with Whisper model for local speech-to-text',
+        'Integrate Google Cloud Speech-to-Text API',
+        'Use OpenAI Whisper API'
+      ]
+    });
+    
+  } catch (error) {
+    console.error('Speech recognition test error:', error);
+    res.status(500).json({ error: 'Speech recognition test failed' });
+  }
+});
+
 // Meeting API endpoints
-// Create a new meeting
-app.post('/api/meetings', auth.authenticateSession, (req, res) => {
+// Import meeting routes
+const meetingRoutes = require('./routes/meetings');
+app.use('/api/meetings', auth.authenticateSession, meetingRoutes);
+
+// Legacy meeting endpoint (keeping for compatibility)
+app.post('/api/meetings-legacy', auth.authenticateSession, (req, res) => {
   const userId = req.user.id;
   const { title, description, scheduled_date } = req.body;
   
@@ -855,31 +882,45 @@ app.get('/api/dashboard/users', auth.authenticateSession, requireAdmin, async (r
 
 app.get('/api/dashboard/activity', auth.authenticateSession, requireAdmin, async (req, res) => {
   try {
-    // Get recent messages as activity
+    // Get recent traffic from database
     const activities = await new Promise((resolve, reject) => {
       db.all(`
         SELECT 
-          m.created_at as timestamp,
-          u.username,
-          'Sent message' as action,
-          substr(m.content, 1, 50) || '...' as details,
-          m.model
-        FROM messages m
-        LEFT JOIN chat_sessions cs ON m.session_id = cs.id
-        LEFT JOIN users u ON cs.user_id = u.id
-        WHERE m.role = 'user'
-        ORDER BY m.created_at DESC
-        LIMIT 20
+          request_id as id,
+          timestamp,
+          ip_address as ip,
+          method,
+          path,
+          user_type as userType,
+          user_id as userId,
+          username,
+          model,
+          messages,
+          metadata,
+          response_time as responseTime,
+          tokens_generated as tokensGenerated,
+          status_code as status,
+          error
+        FROM traffic_logs
+        ORDER BY timestamp DESC
+        LIMIT 50
       `, (err, rows) => {
         if (err) reject(err);
         else resolve(rows);
       });
     });
     
-    res.json(activities.map(activity => ({
+    // Parse JSON fields and format for dashboard
+    const formattedActivities = activities.map(activity => ({
       ...activity,
-      response_time: Math.floor(Math.random() * 200) + 50
-    })));
+      messages: activity.messages ? JSON.parse(activity.messages) : [],
+      metadata: activity.metadata ? JSON.parse(activity.metadata) : {},
+      action: 'Chat Request',
+      details: `Model: ${activity.model}`,
+      response_time: activity.responseTime
+    }));
+    
+    res.json(formattedActivities);
   } catch (error) {
     console.error('Dashboard activity error:', error);
     res.status(500).json({ error: 'Failed to fetch activity' });
@@ -920,6 +961,156 @@ app.get('/api/dashboard/system', auth.authenticateSession, requireAdmin, async (
   } catch (error) {
     console.error('Dashboard system error:', error);
     res.status(500).json({ error: 'Failed to fetch system status' });
+  }
+});
+
+// Database download endpoint (admin only)
+app.get('/api/download/database', auth.authenticateSession, requireAdmin, (req, res) => {
+  const dbPath = path.join(__dirname, 'chat.db');
+  res.download(dbPath, 'chat.db', (err) => {
+    if (err) {
+      console.error('Database download error:', err);
+      res.status(500).json({ error: 'Failed to download database' });
+    }
+  });
+});
+
+// Analytics endpoints
+app.get('/api/analytics/overview', auth.authenticateSession, requireAdmin, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    // Default to last 7 days if no dates provided
+    const end = endDate || new Date().toISOString();
+    const start = startDate || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    
+    // Get overview stats
+    const stats = await new Promise((resolve, reject) => {
+      db.get(`
+        SELECT 
+          COUNT(*) as total_requests,
+          COUNT(DISTINCT ip_address) as unique_ips,
+          COUNT(DISTINCT user_id) as unique_users,
+          COUNT(CASE WHEN user_type = 'guest' THEN 1 END) as guest_requests,
+          COUNT(CASE WHEN user_type = 'authenticated' THEN 1 END) as auth_requests,
+          AVG(response_time) as avg_response_time,
+          SUM(tokens_generated) as total_tokens,
+          COUNT(CASE WHEN error IS NOT NULL THEN 1 END) as error_count
+        FROM traffic_logs
+        WHERE timestamp BETWEEN ? AND ?
+      `, [start, end], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+    
+    res.json(stats);
+  } catch (error) {
+    console.error('Analytics overview error:', error);
+    res.status(500).json({ error: 'Failed to fetch analytics overview' });
+  }
+});
+
+app.get('/api/analytics/models', auth.authenticateSession, requireAdmin, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const end = endDate || new Date().toISOString();
+    const start = startDate || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    
+    // Get model usage stats
+    const modelStats = await new Promise((resolve, reject) => {
+      db.all(`
+        SELECT 
+          model,
+          COUNT(*) as request_count,
+          AVG(response_time) as avg_response_time,
+          SUM(tokens_generated) as total_tokens,
+          COUNT(CASE WHEN error IS NOT NULL THEN 1 END) as error_count
+        FROM traffic_logs
+        WHERE timestamp BETWEEN ? AND ?
+        GROUP BY model
+        ORDER BY request_count DESC
+      `, [start, end], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
+    });
+    
+    res.json(modelStats);
+  } catch (error) {
+    console.error('Analytics models error:', error);
+    res.status(500).json({ error: 'Failed to fetch model analytics' });
+  }
+});
+
+app.get('/api/analytics/users', auth.authenticateSession, requireAdmin, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const end = endDate || new Date().toISOString();
+    const start = startDate || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    
+    // Get user activity stats
+    const userStats = await new Promise((resolve, reject) => {
+      db.all(`
+        SELECT 
+          username,
+          user_type,
+          COUNT(*) as request_count,
+          AVG(response_time) as avg_response_time,
+          SUM(tokens_generated) as total_tokens,
+          MAX(timestamp) as last_active
+        FROM traffic_logs
+        WHERE timestamp BETWEEN ? AND ?
+        GROUP BY username, user_type
+        ORDER BY request_count DESC
+        LIMIT 50
+      `, [start, end], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
+    });
+    
+    res.json(userStats);
+  } catch (error) {
+    console.error('Analytics users error:', error);
+    res.status(500).json({ error: 'Failed to fetch user analytics' });
+  }
+});
+
+app.get('/api/analytics/hourly', auth.authenticateSession, requireAdmin, async (req, res) => {
+  try {
+    const { date } = req.query;
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    
+    // Get hourly traffic stats
+    const hourlyStats = await new Promise((resolve, reject) => {
+      db.all(`
+        SELECT 
+          strftime('%H', timestamp) as hour,
+          COUNT(*) as request_count,
+          COUNT(DISTINCT ip_address) as unique_ips,
+          AVG(response_time) as avg_response_time
+        FROM traffic_logs
+        WHERE date(timestamp) = date(?)
+        GROUP BY hour
+        ORDER BY hour
+      `, [targetDate], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
+    });
+    
+    // Fill in missing hours with zeros
+    const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
+    const filledStats = hours.map(hour => {
+      const stat = hourlyStats.find(s => s.hour === hour);
+      return stat || { hour, request_count: 0, unique_ips: 0, avg_response_time: 0 };
+    });
+    
+    res.json(filledStats);
+  } catch (error) {
+    console.error('Analytics hourly error:', error);
+    res.status(500).json({ error: 'Failed to fetch hourly analytics' });
   }
 });
 

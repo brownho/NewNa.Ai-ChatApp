@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSP disabled for desktop app - security handled by Electron -->
+    <title>NewNa.AI Desktop</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0d0d0d;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2563eb;
+        }
+        .status {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .config {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        .error {
+            color: #ef4444;
+            margin-top: 10px;
+        }
+        .success {
+            color: #10b981;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NewNa.AI Desktop Configuration</h1>
+        
+        <div class="status">
+            <h2>Status</h2>
+            <p>App Version: <span id="version">Loading...</span></p>
+            <p>Server URL: <span id="currentUrl">Loading...</span></p>
+            <p>Connection Status: <span id="connectionStatus">Checking...</span></p>
+        </div>
+
+        <div class="config">
+            <h2>Server Configuration</h2>
+            <p>Enter your server URL (e.g., https://brownfi.tplinkdns.com:3000):</p>
+            <input type="text" id="serverUrl" placeholder="https://brownfi.tplinkdns.com:3000">
+            <button onclick="saveAndTest()">Save and Test Connection</button>
+            <button onclick="openChat()">Open Chat Interface</button>
+            <div id="message"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load current settings
+        async function loadSettings() {
+            if (window.electronAPI) {
+                const version = await window.electronAPI.getAppVersion();
+                document.getElementById('version').textContent = version;
+                
+                const url = await window.electronAPI.getServerUrl();
+                document.getElementById('currentUrl').textContent = url;
+                document.getElementById('serverUrl').value = url;
+                
+                testConnection(url);
+            } else {
+                document.getElementById('version').textContent = 'Web Mode';
+                document.getElementById('currentUrl').textContent = 'N/A';
+            }
+        }
+
+        // Test connection to server
+        async function testConnection(url) {
+            const status = document.getElementById('connectionStatus');
+            status.textContent = 'Testing...';
+            
+            try {
+                const response = await fetch(url + '/api/models', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    status.textContent = '✅ Connected';
+                    status.style.color = '#10b981';
+                } else {
+                    status.textContent = '❌ Connection failed (Status: ' + response.status + ')';
+                    status.style.color = '#ef4444';
+                }
+            } catch (error) {
+                status.textContent = '❌ Cannot connect: ' + error.message;
+                status.style.color = '#ef4444';
+            }
+        }
+
+        // Save and test new URL
+        async function saveAndTest() {
+            const url = document.getElementById('serverUrl').value;
+            const message = document.getElementById('message');
+            
+            if (!url) {
+                message.innerHTML = '<p class="error">Please enter a server URL</p>';
+                return;
+            }
+
+            message.innerHTML = '<p>Saving and testing...</p>';
+            
+            if (window.electronAPI) {
+                await window.electronAPI.setServerUrl(url);
+            }
+            
+            await testConnection(url);
+            
+            document.getElementById('currentUrl').textContent = url;
+            message.innerHTML = '<p class="success">Settings saved! You can now open the chat interface.</p>';
+        }
+
+        // Open chat interface
+        function openChat() {
+            const url = document.getElementById('serverUrl').value;
+            if (url) {
+                // Set up guest user
+                const guestUser = {
+                    id: 'guest-desktop',
+                    email: 'desktop@local',
+                    isGuest: true,
+                    daily_message_limit: 999,
+                    daily_message_count: 0
+                };
+                localStorage.setItem('user', JSON.stringify(guestUser));
+                localStorage.setItem('isGuest', 'true');
+                
+                // Navigate to main interface
+                window.location.href = 'index.html';
+            } else {
+                document.getElementById('message').innerHTML = '<p class="error">Please configure server URL first</p>';
+            }
+        }
+
+        // Load settings on startup
+        loadSettings();
+    </script>
+</body>
+</html>

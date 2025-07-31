@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const db = require('../database');
 
 // Create logs directory if it doesn't exist
 const logsDir = path.join(__dirname, 'logs');
@@ -90,8 +91,9 @@ function trafficLogger() {
         return [];
     }
     
-    // Save log entry to file
+    // Save log entry to file and database
     function saveLogEntry(entry) {
+        // Save to file (for backward compatibility)
         const logFile = getLogFilePath();
         let logs = loadTodayLogs();
         logs.push(entry);
@@ -99,14 +101,49 @@ function trafficLogger() {
         try {
             fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
         } catch (err) {
-            console.error('Error saving log entry:', err);
+            console.error('Error saving log entry to file:', err);
+        }
+        
+        // Save to database
+        try {
+            db.run(`
+                INSERT INTO traffic_logs (
+                    request_id, timestamp, ip_address, method, path,
+                    user_type, user_id, username, model, messages,
+                    metadata, response_time, tokens_generated,
+                    status_code, error
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+                entry.id,
+                entry.timestamp,
+                entry.ip,
+                entry.method,
+                entry.path,
+                entry.userType,
+                entry.userId,
+                entry.username,
+                entry.model,
+                JSON.stringify(entry.messages),
+                JSON.stringify(entry.metadata),
+                entry.responseTime,
+                entry.tokensGenerated,
+                entry.status,
+                entry.error
+            ], (err) => {
+                if (err) {
+                    console.error('Error saving traffic log to database:', err);
+                }
+            });
+        } catch (err) {
+            console.error('Error preparing traffic log for database:', err);
         }
     }
     
     // Middleware function
     const middleware = async (req, res, next) => {
-        // Only log chat API calls
-        if (req.path !== '/api/chat' || req.method !== 'POST') {
+        // Log both authenticated and guest chat API calls
+        const isChat = (req.path === '/api/chat' || req.path === '/api/guest/chat') && req.method === 'POST';
+        if (!isChat) {
             return next();
         }
         
@@ -120,6 +157,9 @@ function trafficLogger() {
             ip: getClientIP(req),
             method: req.method,
             path: req.path,
+            userType: req.path === '/api/guest/chat' ? 'guest' : 'authenticated',
+            userId: null, // Will be filled later
+            username: 'guest', // Will be updated later
             model: req.body.model || 'default',
             messages: req.body.messages || [],
             options: req.body.options || {},
@@ -148,10 +188,29 @@ function trafficLogger() {
                 const lines = chunkStr.split('\n').filter(line => line.trim());
                 
                 for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const data = JSON.parse(line.slice(6));
+                    try {
+                        // Ollama sends JSON directly, not with 'data:' prefix
+                        const data = JSON.parse(line);
                         if (data.message?.content) {
-                            tokenCount++;
+                            // Count actual content length for token estimation
+                            const text = data.message.content;
+                            const words = text.split(/[\s\.,!?;:]+/).filter(w => w.length > 0);
+                            tokenCount += Math.ceil(words.length * 1.3);
+                        }
+                        
+                        // Also capture final token count from eval_count
+                        if (data.done && data.eval_count) {
+                            tokenCount = data.eval_count;
+                        }
+                    } catch (parseErr) {
+                        // Some lines might be SSE format with 'data:' prefix
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.slice(6));
+                            if (data.message?.content) {
+                                const text = data.message.content;
+                                const words = text.split(/[\s\.,!?;:]+/).filter(w => w.length > 0);
+                                tokenCount += Math.ceil(words.length * 1.3);
+                            }
                         }
                     }
                 }
@@ -173,6 +232,12 @@ function trafficLogger() {
             logEntry.responseTime = Date.now() - startTime;
             logEntry.tokensGenerated = tokenCount;
             logEntry.status = res.statusCode;
+            
+            // Update user info if available (after auth middleware has run)
+            if (req.user) {
+                logEntry.userId = req.user.id;
+                logEntry.username = req.user.username;
+            }
             
             // Save to file and memory
             saveLogEntry(logEntry);

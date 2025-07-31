@@ -56,5 +56,21 @@ cloudflared.deb
 tmp/
 temp/
 
+# Large ZIP files
+*.zip
+NewNaAI-*.zip
+
+# Backup and debug files
+*-backup.*
+*-old.*
+*-original.*
+*-fixed.*
+*-refactored.*
+*-copy.*
+*-ipc.*
+debug-*
+test-*.html
+test-*.bat
+
 # Vercel
 .vercel

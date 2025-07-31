@@ -1,0 +1,144 @@
+/* Electron-specific styles for Windows desktop app */
+
+/* Remove mobile-specific styles */
+body {
+    -webkit-user-select: text;
+    user-select: text;
+    overflow: auto;
+}
+
+/* Windows titlebar area */
+.electron-titlebar {
+    -webkit-app-region: drag;
+    height: 32px;
+    background-color: #1a1a1a;
+    display: none; /* Using native frame */
+}
+
+/* Adjust container for desktop */
+.container {
+    height: 100vh;
+    max-width: none;
+}
+
+/* Desktop-optimized header */
+header {
+    -webkit-app-region: no-drag;
+    padding: 0.75rem 1.5rem;
+}
+
+/* Better scrollbar for Windows */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Desktop-optimized chat */
+.messages {
+    padding: 1rem 2rem;
+}
+
+.message {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Desktop input area */
+.input-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+}
+
+/* Settings modal for desktop */
+.settings-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    max-height: 80vh;
+    background: #1a1a1a;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+/* Desktop notifications */
+.desktop-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #2563eb;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Keyboard shortcuts hint */
+.keyboard-shortcuts {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    font-size: 12px;
+    color: #666;
+}
+
+/* File drag and drop */
+.drag-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(37, 99, 235, 0.1);
+    border: 3px dashed #2563eb;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.drag-overlay.active {
+    display: flex;
+}
+
+.drag-overlay-text {
+    font-size: 24px;
+    color: #2563eb;
+    font-weight: 600;
+}
+
+/* Windows-specific fixes */
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+    /* IE/Edge specific styles */
+    .container {
+        height: 100%;
+    }
+}

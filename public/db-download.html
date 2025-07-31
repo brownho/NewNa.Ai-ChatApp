@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Download</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0d0d0d;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            max-width: 400px;
+        }
+        h1 {
+            color: #9F7AEA;
+            margin-bottom: 1rem;
+        }
+        .download-btn {
+            background: #6B46C1;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+        .download-btn:hover {
+            background: #805AD5;
+            transform: translateY(-2px);
+        }
+        .download-btn:disabled {
+            background: #4a5568;
+            cursor: not-allowed;
+        }
+        .message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+        .error {
+            background: rgba(245, 101, 101, 0.1);
+            border: 1px solid #f56565;
+            color: #f56565;
+        }
+        .success {
+            background: rgba(72, 187, 120, 0.1);
+            border: 1px solid #48bb78;
+            color: #48bb78;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Database Download</h1>
+        <p>Click the button below to download the chat.db file</p>
+        <button id="downloadBtn" class="download-btn" onclick="downloadDatabase()">
+            Download Database
+        </button>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        async function downloadDatabase() {
+            const btn = document.getElementById('downloadBtn');
+            const messageDiv = document.getElementById('message');
+            
+            btn.disabled = true;
+            btn.textContent = 'Preparing download...';
+            messageDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/download/database', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    // Get the blob
+                    const blob = await response.blob();
+                    
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'chat.db';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    messageDiv.innerHTML = '<div class="message success">Download started!</div>';
+                } else if (response.status === 401) {
+                    messageDiv.innerHTML = '<div class="message error">You must be logged in as admin to download the database.</div>';
+                } else {
+                    messageDiv.innerHTML = '<div class="message error">Failed to download database. Please try again.</div>';
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                messageDiv.innerHTML = '<div class="message error">Network error. Please check your connection.</div>';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Download Database';
+            }
+        }
+        
+        // Check auth status on load
+        window.onload = async function() {
+            try {
+                const response = await fetch('/api/auth/user', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    document.getElementById('message').innerHTML = 
+                        '<div class="message error">Please <a href="/login.html" style="color: #9F7AEA;">login</a> first.</div>';
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+            }
+        };
+    </script>
+</body>
+</html>

@@ -177,6 +177,38 @@ db.serialize(() => {
   db.run(`CREATE INDEX IF NOT EXISTS idx_transcripts_meeting_id ON meeting_transcripts(meeting_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_participants_meeting_id ON meeting_participants(meeting_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_action_items_meeting_id ON meeting_action_items(meeting_id)`);
+
+  // Traffic logs table for analytics
+  db.run(`
+    CREATE TABLE IF NOT EXISTS traffic_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      request_id TEXT UNIQUE NOT NULL,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      ip_address TEXT,
+      method TEXT,
+      path TEXT,
+      user_type TEXT,
+      user_id INTEGER,
+      username TEXT,
+      model TEXT,
+      messages TEXT, -- JSON string
+      metadata TEXT, -- JSON string
+      response_time INTEGER,
+      tokens_generated INTEGER,
+      status_code INTEGER,
+      error TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // Create indexes for traffic analytics
+  db.run(`CREATE INDEX IF NOT EXISTS idx_traffic_timestamp ON traffic_logs(timestamp)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_traffic_user_id ON traffic_logs(user_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_traffic_user_type ON traffic_logs(user_type)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_traffic_model ON traffic_logs(model)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_traffic_status ON traffic_logs(status_code)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_traffic_path ON traffic_logs(path)`);
 });
 
 module.exports = db;

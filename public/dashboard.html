@@ -250,6 +250,231 @@
             color: #fff;
             font-weight: 500;
         }
+        
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-header {
+            background: #0d0d0d;
+            padding: 1.5rem;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            color: #9F7AEA;
+            margin: 0;
+        }
+        
+        .close-btn {
+            font-size: 2rem;
+            color: #666;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .close-btn:hover {
+            color: #fff;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        .detail-row {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: #0d0d0d;
+            border-radius: 4px;
+        }
+        
+        .detail-label {
+            font-weight: bold;
+            color: #9F7AEA;
+            margin-bottom: 0.25rem;
+        }
+        
+        .detail-value {
+            color: #e0e0e0;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        
+        .messages-container {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #0d0d0d;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+        }
+        
+        .message-item {
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: #1a1a1a;
+            border-radius: 4px;
+        }
+        
+        .clickable-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .clickable-row:hover {
+            background-color: rgba(107, 70, 193, 0.1);
+        }
+        
+        .user-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin-left: 0.5rem;
+        }
+        
+        .guest-badge {
+            background: #4a5568;
+            color: #cbd5e0;
+        }
+        
+        .auth-badge {
+            background: #2b6cb0;
+            color: #bee3f8;
+        }
+        
+        /* Analytics Query Styles */
+        .analytics-query-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .query-input-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .analytics-select {
+            background: #0d0d0d;
+            color: #e0e0e0;
+            border: 1px solid #444;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            min-width: 200px;
+        }
+        
+        .date-input {
+            background: #0d0d0d;
+            color: #e0e0e0;
+            border: 1px solid #444;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .run-query-btn {
+            background: #6B46C1;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .run-query-btn:hover {
+            background: #805AD5;
+            transform: translateY(-1px);
+        }
+        
+        .query-results {
+            background: #0d0d0d;
+            border-radius: 8px;
+            padding: 1.5rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .query-results h3 {
+            color: #9F7AEA;
+            margin-bottom: 1rem;
+        }
+        
+        .query-results pre {
+            background: #1a1a1a;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            color: #e0e0e0;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .stat-item {
+            background: #1a1a1a;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        
+        .stat-item h4 {
+            color: #9F7AEA;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-item .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .empty-state {
+            color: #666;
+            text-align: center;
+            padding: 2rem;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -381,6 +606,27 @@
                 </div>
             </div>
             
+            <!-- Analytics Query Interface -->
+            <div class="section">
+                <h2>Analytics Query</h2>
+                <div class="analytics-query-container">
+                    <div class="query-input-group">
+                        <select id="analyticsEndpoint" class="analytics-select">
+                            <option value="/api/analytics/overview">Overview Stats</option>
+                            <option value="/api/analytics/models">Model Usage</option>
+                            <option value="/api/analytics/users">User Activity</option>
+                            <option value="/api/analytics/hourly">Hourly Traffic</option>
+                        </select>
+                        <input type="date" id="startDate" class="date-input" placeholder="Start Date">
+                        <input type="date" id="endDate" class="date-input" placeholder="End Date">
+                        <button onclick="dashboard.runAnalyticsQuery()" class="run-query-btn">Run Query</button>
+                    </div>
+                    <div id="queryResults" class="query-results">
+                        <p class="empty-state">Select a query and click "Run Query" to see results</p>
+                    </div>
+                </div>
+            </div>
+            
             <!-- System Status -->
             <div class="section">
                 <h2>System Status</h2>
@@ -414,6 +660,19 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Request Details Modal -->
+    <div id="requestModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Request Details</h2>
+                <span class="close-btn" onclick="dashboard.closeRequestModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Request details will be inserted here -->
             </div>
         </div>
     </div>

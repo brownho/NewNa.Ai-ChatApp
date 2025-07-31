@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Database</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0d0d0d;
+            color: #e0e0e0;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            max-width: 500px;
+            margin: 50px auto;
+        }
+        h1 {
+            color: #9F7AEA;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .download-btn {
+            background: #6B46C1;
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 12px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 20px 0;
+            display: inline-block;
+            text-decoration: none;
+            width: 80%;
+            max-width: 300px;
+        }
+        .download-btn:active {
+            background: #553C9A;
+        }
+        .info {
+            color: #999;
+            font-size: 14px;
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+        .file-info {
+            background: #0d0d0d;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Mobile Database Download</h1>
+        
+        <div class="file-info">
+            <strong>Filename:</strong> chat.db<br>
+            <strong>Size:</strong> <span id="fileSize">Calculating...</span>
+        </div>
+        
+        <a href="/api/download/database" class="download-btn" download="chat.db">
+            📥 Download Database
+        </a>
+        
+        <div class="info">
+            <p><strong>For iPhone/Safari:</strong><br>
+            Tap and hold the download button, then select "Download Linked File"</p>
+            
+            <p><strong>For Android/Chrome:</strong><br>
+            Just tap the download button</p>
+            
+            <p>The file will be saved to your Downloads folder.</p>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is logged in
+        fetch('/api/auth/user', { credentials: 'include' })
+            .then(response => {
+                if (!response.ok) {
+                    document.querySelector('.container').innerHTML = 
+                        '<h1>❌ Not Logged In</h1><p>Please login first at <a href="/login.html" style="color:#9F7AEA">/login.html</a></p>';
+                }
+            })
+            .catch(err => console.error(err));
+
+        // Get file size
+        fetch('/api/dashboard/stats', { credentials: 'include' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.dbSize) {
+                    const size = data.dbSize;
+                    let sizeStr = size + ' B';
+                    if (size > 1024) sizeStr = (size / 1024).toFixed(2) + ' KB';
+                    if (size > 1024 * 1024) sizeStr = (size / (1024 * 1024)).toFixed(2) + ' MB';
+                    document.getElementById('fileSize').textContent = sizeStr;
+                }
+            })
+            .catch(err => {
+                document.getElementById('fileSize').textContent = 'Unknown';
+            });
+    </script>
+</body>
+</html>
